@@ -17,14 +17,26 @@ class SyncJsonJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private $identifier;
+    private $batchNumber;
+    private $item;
+    private $modelObj;
+    private $productHash;
+    private $composedProduct;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($identifier, $batchNumber, $item, $modelObj, $productHash, $composedProduct)
     {
-        //
+        $this->identifier = $identifier;
+        $this->batchNumber = $batchNumber;
+        $this->item = $item;
+        $this->modelObj = $modelObj;
+        $this->productHash = $productHash;
+        $this->composedProduct = $composedProduct;
     }
 
     /**
@@ -34,15 +46,21 @@ class SyncJsonJob implements ShouldQueue
      */
     public function handle()
     {
-        $path = public_path('generated-100.json');
+        $productId = $this->item[$this->identifier];
+        $modelObj = (new $this->modelObj);
 
-        $syncer = new JsonMySQLSyncer(
-            new JsonCollectionStreamReader($path, true),
-            Product::class,
-            'id',
-            new EntityJsonMySQLMapper()
-        );
+        $dbProduct = $modelObj::withTrashed()->firstOrCreate([
+            'id' => $productId
+        ], $this->composedProduct);
 
-        $syncer->sync();
+        if (!is_null($dbProduct->deleted_at)) {
+            $dbProduct->restore();
+        }
+
+        if($dbProduct->data_hash != $this->productHash) {
+            $modelObj::whereId($productId)->update($this->composedProduct);
+        }else{
+            $dbProduct->touchBatchNumber($this->batchNumber);
+        }
     }
 }

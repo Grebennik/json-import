@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Classes\EntityJsonMySQLMapper;
+use App\Classes\JsonCollectionStreamReader;
+use App\Classes\JsonMySQLSyncer;
+use App\Models\Product;
 use Illuminate\Console\Command;
-use App\Jobs\SyncJsonJob;
 
 class SyncJson extends Command
 {
@@ -37,7 +40,15 @@ class SyncJson extends Command
      */
     public function handle()
     {
-        $job = (new SyncJsonJob());
-        $job->dispatch();
+        $path = public_path('generated-1000.json');
+
+        $syncer = new JsonMySQLSyncer(
+            new JsonCollectionStreamReader($path, true),
+            Product::class,
+            'id',
+            new EntityJsonMySQLMapper()
+        );
+
+        $syncer->sync();
     }
 }

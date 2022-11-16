@@ -13,13 +13,10 @@
 <br>
 
 <p>To check -</p>
-<span>Without queue:</span>
-<ol>
-    <li>Go to {your-site-name}/home</li>
-    <li>Press enter and check database</li>
-</ol>
+
 <span>With queue:</span>
 <ol>
+    <li>Update .env file with QUEUE_CONNECTION=database</li>
     <li>Go to bash and do:</li>
     <li>php artisan sync:json</li>
     <li>php artisan queue:work --tries=3 --stop-when-empty</li>

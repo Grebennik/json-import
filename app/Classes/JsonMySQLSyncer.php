@@ -4,7 +4,7 @@ namespace App\Classes;
 
 use App\Interfaces\JsonMySQLMapperInterface;
 use App\Interfaces\SyncerInterface;
-use Illuminate\Support\Str;
+use App\Jobs\SyncJsonJob;
 
 class JsonMySQLSyncer implements SyncerInterface
 {
@@ -48,22 +48,17 @@ class JsonMySQLSyncer implements SyncerInterface
         $modelObj = (new $this->model);
 
         foreach ($this->reader->get() as $item) {
-            $productId = $item[$this->identifier];
             $productHash = md5(serialize($item));
+            $composedProduct = $this->composeProduct((array)$item, $productHash);
 
-            $dbProduct = $modelObj::withTrashed()->firstOrCreate([
-                'id' => $productId
-            ], $productToDB = $this->composeProduct($item, $productHash));
-
-            if(!is_null($dbProduct->deleted_at)){
-                $dbProduct->restore();
-            }
-
-            if($dbProduct->data_hash != $productHash) {
-                $modelObj::whereId($productId)->update($productToDB);
-            }else{
-                $dbProduct->touchBatchNumber($this->batchNumber);
-            }
+            dispatch(new SyncJsonJob(
+                $this->identifier,
+                $this->batchNumber,
+                $item,
+                $this->model,
+                $productHash,
+                $composedProduct
+            ));
         }
         $this->reader->close();
 
