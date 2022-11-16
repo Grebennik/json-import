@@ -71,7 +71,7 @@ class EntityJsonMySQLMapper implements JsonMySQLMapperInterface
 
         $result = array_combine($this->jsonStructure, $model::getMap());
 
-        if(!empty($this->renamings)){
+        if (!empty($this->renamings)) {
             return array_merge($result, $this->renamings);
         }
 

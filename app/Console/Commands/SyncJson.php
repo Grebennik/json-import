@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Classes\JsonCollectionStreamReader;
 use Illuminate\Console\Command;
+use App\Jobs\SyncJsonJob;
 
 class SyncJson extends Command
 {
@@ -34,19 +34,10 @@ class SyncJson extends Command
     /**
      * Execute the console command.
      *
-     * @return int
      */
     public function handle()
     {
-        $path = 'path/to/file.json';
-
-        $reader = new JsonCollectionStreamReader($path);
-
-        foreach ($reader->get() as $item) {
-            // Do something with item.
-        }
-
-        $reader->close();
-
+        $job = (new SyncJsonJob());
+        $job->dispatch();
     }
 }
